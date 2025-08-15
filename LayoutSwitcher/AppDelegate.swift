@@ -250,7 +250,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func getCurrentInputSourceId() -> String? {
-        guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeUnretainedValue() else {
+        guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
             return nil;
         }
         return TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceID)
