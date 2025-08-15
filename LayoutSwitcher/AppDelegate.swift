@@ -1,6 +1,7 @@
 import Cocoa
 import SwiftUI
 import ServiceManagement
+import Carbon
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -13,6 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private var enabledEditKeysValues: [String] = []
     private var editKeysState: EditHotKeys = []
+    private var allInputSources: [String] = []
     
     private struct Constants {
         // Launcher application bundle identifier
@@ -29,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Check security access to init event monitor
         if isApplicationHasSecurityAccess() {
-            initLanSwitchEventMonitor()
+            initLangSwitchEventMonitor()
             initWinEditEventMonitor()
         } else {
             let securityAlert = NSAlert()
@@ -150,7 +152,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menuBarItem.menu = statusBarMenu
     }
     
-    private func initLanSwitchEventMonitor() {
+    private func initLangSwitchEventMonitor() {
+        allInputSources = getAllInputSourceIds()
         // Get second modifier key, according to menu
         let secondModifierFlag = arrayLangHotKeys[SettingsHelper.shared.checkedHotKeyIndex]
         
@@ -158,7 +161,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         langEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
             if (event.modifierFlags.contains(.shift) &&
                 event.modifierFlags.contains(secondModifierFlag)) {
-                    self.sendDefaultChangeLayoutHotkey()
+                    self.selectNextLayout()
             }
         }
     }
@@ -193,7 +196,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func updateLangEventMonitor() {
         deinitLangEventMonitor()
-        initLanSwitchEventMonitor()
+        initLangSwitchEventMonitor()
     }
     
     private func updateEditEventMonitor() {
@@ -211,22 +214,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .flatMap { _ = NSWorkspace.shared.open($0) }
     }
     
-    // TODO: To add some more combinations for different use-cases
-    private func sendDefaultChangeLayoutHotkey() {
-        // Create a native system 'Control + Space' event
-        // TODO: maybe better to read system's layout hotkeys instead of hardcoding
-        let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let spaceDown = CGEvent(keyboardEventSource: src, virtualKey: Constants.spaceKeyCode, keyDown: true)
-        let spaceUp = CGEvent(keyboardEventSource: src, virtualKey: Constants.spaceKeyCode, keyDown: false)
-        
-        spaceDown?.flags = CGEventFlags.maskAlternate
-        spaceUp?.flags = CGEventFlags.maskAlternate
-        spaceDown?.flags = CGEventFlags.maskControl
-        spaceUp?.flags = CGEventFlags.maskControl
+    private func selectNextLayout() {
+        guard let currentInputSourceId = getCurrentInputSourceId() else {
+            return
+        }
 
-        let loc = CGEventTapLocation.cghidEventTap
-        spaceDown?.post(tap: loc)
-        spaceUp?.post(tap: loc)
+        if (allInputSources.isEmpty || allInputSources.count == 1) {
+            return
+        }
+        guard let currentIndex = allInputSources.firstIndex(of: currentInputSourceId) else {
+            return
+        }
+        var nextIndex = currentIndex + 1;
+        if (nextIndex >= allInputSources.count) {
+            nextIndex = 0
+        }
+        setInputSourceId(allInputSources[nextIndex])
     }
     
     private func sendDefaultEditHotkey(_ key:String, code:UInt16) {
@@ -244,6 +247,54 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let loc = CGEventTapLocation.cghidEventTap
         keyDown?.post(tap: loc)
         keyUp?.post(tap: loc)
+    }
+    
+    private func getCurrentInputSourceId() -> String? {
+        guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeUnretainedValue() else {
+            return nil;
+        }
+        return TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceID)
+            .map { Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String }
+    }
+    
+    private func getAllInputSourceIds() -> [String] {
+        guard let inputSources = TISCreateInputSourceList(nil, false)?.takeRetainedValue() as? [TISInputSource] else {
+            return [];
+        }
+        let selectableSources = inputSources.filter(isSelectableInputSource)
+        return selectableSources.compactMap { src in
+            TISGetInputSourceProperty(src, kTISPropertyInputSourceID)
+                .map { Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String }
+        }
+    }
+    
+    private func isSelectableInputSource(_ inputSource: TISInputSource) -> Bool {
+        // Get the category property (e.g., "Keyboard Input Source")
+        if let ptr = TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceCategory) {
+            let category = Unmanaged<CFString>.fromOpaque(ptr).takeUnretainedValue() as String
+            if category != kTISCategoryKeyboardInputSource as String {
+                return false
+            }
+        }
+        
+        // Get the "selectable" flag
+        if let ptr = TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceIsSelectCapable) {
+            let isSelectable = Unmanaged<CFNumber>.fromOpaque(ptr).takeUnretainedValue() as NSNumber
+            if isSelectable.boolValue == false {
+                return false
+            }
+        }
+        
+        return true
+    }
+
+    private func setInputSourceId(_ id: String) {
+        let filter = [kTISPropertyInputSourceID as String: id] as CFDictionary
+        guard let filteredArray = TISCreateInputSourceList(filter, false)?.takeRetainedValue() as? [TISInputSource],
+              let inputSource = filteredArray.first else {
+            return;
+        }
+        TISSelectInputSource(inputSource)
     }
     
     @objc private func applicationChangeHotkey(_ sender: NSMenuItem) {
