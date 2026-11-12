@@ -1,0 +1,17 @@
+name: Lint code
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    # Official SwiftLint image, pinned so new rules don't break the build unexpectedly
+    container: ghcr.io/realm/swiftlint:0.65.1
+    steps:
+    - uses: actions/checkout@v5
+    - name: Lint code using SwiftLint
+      run: swiftlint lint --reporter github-actions-logging

@@ -1,0 +1,7 @@
+excluded:
+  - DerivedData
+  - build
+
+# Xcode keeps indentation on empty lines
+trailing_whitespace:
+  ignores_empty_lines: true

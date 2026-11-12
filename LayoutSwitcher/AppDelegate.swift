@@ -451,7 +451,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let securityAlert = NSAlert()
             
             securityAlert.messageText = "Can't perform this operation"
-            securityAlert.informativeText = "Please check that application was copied to /Application directory and try again.\nYou can also add it manually Settings -> Users and Groups -> Login Items"
+            securityAlert.informativeText =
+                "Please check that application was copied to /Application directory and try again.\n" +
+                "You can also add it manually Settings -> Users and Groups -> Login Items"
             securityAlert.alertStyle = .warning
             securityAlert.addButton(withTitle: "Ok")
         }
@@ -462,7 +464,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let aboutAlert = NSAlert()
         
         aboutAlert.messageText = "Layout Switcher v." + appVersion!
-        aboutAlert.informativeText = "LayoutSwitcher is open-source application that allows you to change keyboard layout using shortcuts that are not alloved by MacOS: Fn + Shift ⇧, Option ⌥ + Shift ⇧, Command ⌘ + Shift ⇧ or Control ⌃ + Shift ⇧. \nIn some sence it an alternative for the Punto Switcher or Karabiner if you are using it for similar purpose, because both are kind of overkill for this."
+        aboutAlert.informativeText =
+            "LayoutSwitcher is open-source application that allows you to change keyboard layout " +
+            "using shortcuts that are not alloved by MacOS: " +
+            "Fn + Shift ⇧, Option ⌥ + Shift ⇧, Command ⌘ + Shift ⇧ or Control ⌃ + Shift ⇧. \n" +
+            "In some sence it an alternative for the Punto Switcher or Karabiner " +
+            "if you are using it for similar purpose, because both are kind of overkill for this."
         aboutAlert.alertStyle = .informational
         aboutAlert.addButton(withTitle: "Ok")
         aboutAlert.runModal()
