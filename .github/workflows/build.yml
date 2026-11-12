@@ -11,24 +11,20 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    # Needed to create releases with the default token
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v5
     # Generic destination builds a universal binary (x86_64 + arm64).
     # Runners have no signing certificate, so sign ad-hoc instead of with the development team.
     - name: Build (macOS 12.0+, universal)
       run: xcodebuild clean build -scheme LayoutSwitcherPack -destination 'generic/platform=macOS' -derivedDataPath ${{ github.workspace }}/build CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
-    - name: List files in the repository
-      run: |
-        ls ${{ github.workspace }}
-    # Releases need a tag, so skip them for branch pushes and pull requests
+    # Releases need a tag, so skip them for branch pushes and pull requests.
+    # Zip only the app bundle, ditto keeps its code signature intact.
     - name: Archive Release
       if: startsWith(github.ref, 'refs/tags/')
-      uses: thedoctor0/zip-release@main
-      with:
-        path: '.'
-        type: 'zip'
-        filename: 'LayoutSwitcher.zip'
-        exclusions: '*.git* .editorconfig'
+      run: ditto -c -k --keepParent build/Build/Products/Release/LayoutSwitcher.app LayoutSwitcher.zip
     - name: Upload Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: ncipollo/release-action@v1

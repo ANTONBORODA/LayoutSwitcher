@@ -6,12 +6,17 @@ LayoutSwitcher is open-source application that allows you to change keyboard lay
 ![LayoutSwitcher](LayoutSwitcher.png)
 
 # Installation
-1. Download Intel or M1 image by the link below 
-2. Drag'n'drop LayoutSwitcher application from dmg-file to your Applications folder
-3. Make sure that you are using MacOs default shortcut (Control ⌃ + Space). You can check that by "Settings -> Keyboard -> Shortcuts". That is needed, because application emulates this shortcut in order to switch keybourd layout.
-4. Run the application. You could be asked for provide permissions to run it, since it was downloaded not from the App Store. You can provide permissions by clicking allow button at "Settings -> Security & Privacy -> General"
-5. At the first run application will ask you to add LayoutSwitcher to "Settings -> Security & Privacy -> Privacy -> Accessibility" in order to work properly. This is needed to be able globally monitor shortcut that you chosen to switch keyboard layout.
-6. Since Mac OS Ventura Apple removed the option “Allow applications downloaded from anywhere” from the system settings. You can understand that if you will see "Application can't be opened because Apple cannot check it for malicious software". To fix that you should open Terminal and type `sudo spctl --master-disable`
+Requires macOS 12 or newer, works on both Intel and Apple Silicon Macs.
+
+1. Download `LayoutSwitcher.zip` by the link below, unzip it and move LayoutSwitcher application to your Applications folder
+2. Run the application. Since it is not notarized by Apple, the first launch is blocked with "Apple could not verify LayoutSwitcher is free of malware". To allow it open "Settings -> Privacy & Security", scroll down and click "Open Anyway". Alternatively run in Terminal `xattr -dr com.apple.quarantine /Applications/LayoutSwitcher.app`
+3. At the first run application will ask you to add LayoutSwitcher to "Settings -> Privacy & Security -> Accessibility" in order to work properly. This is needed to be able globally monitor shortcut that you chosen to switch keyboard layout. Restart the application after that.
+4. After updating to a new version remove LayoutSwitcher from the Accessibility list and add it again, otherwise macOS keeps the permission for the old version only.
+
+# Usage
+* "Layout shortcuts" menu chooses the shortcut to switch keyboard layout
+* "Cycle through" menu chooses which layouts the shortcut switches between. Unchecked layouts are skipped, and when you are on one of them the shortcut switches back to the first checked layout
+* "Edit shortcuts" menu enables Windows-like Control ⌃ shortcuts for undo, copy/paste and others
 
 # Downloads
 * GitHub: https://github.com/3t0n/LayoutSwitcher/releases/
