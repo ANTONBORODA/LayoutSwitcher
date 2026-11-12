@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v5
     # Generic destination builds a universal binary (x86_64 + arm64).
     # Runners have no signing certificate, so sign ad-hoc instead of with the development team.
-    - name: Build (macOS 12.0+, universal)
+    - name: Build (macOS 15.0+, universal)
       run: xcodebuild clean build -scheme LayoutSwitcherPack -destination 'generic/platform=macOS' -derivedDataPath ${{ github.workspace }}/build CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
     # Releases need a tag, so skip them for branch pushes and pull requests.
     # Zip only the app bundle, ditto keeps its code signature intact.

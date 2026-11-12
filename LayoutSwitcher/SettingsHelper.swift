@@ -2,7 +2,6 @@ import Foundation
 
 class SettingsHelper {
     private let indexHotKey = "INDEX_HOT_KEY"
-    private let enableAutostart = "ENABLE_AUTOSTART"
     private let enable = "ENABLE"
     private let winEditHotKeys = "WIN_EDIT_HOTKEYS"
     private let excludedInputSources = "EXCLUDED_INPUT_SOURCES"
@@ -11,11 +10,6 @@ class SettingsHelper {
 
     private let store = UserDefaults.standard
 
-    var isAutostartEnable: Bool {
-        get { store.object(forKey: enableAutostart) as? Bool ?? false }
-        set { store.set(newValue, forKey: enableAutostart) }
-    }
-    
     var isEnable: Bool {
         get { store.object(forKey: enable) as? Bool ?? false }
         set { store.set(newValue, forKey: enable) }

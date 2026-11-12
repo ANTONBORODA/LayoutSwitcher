@@ -6,7 +6,7 @@ LayoutSwitcher is open-source application that allows you to change keyboard lay
 ![LayoutSwitcher](LayoutSwitcher.png)
 
 # Installation
-Requires macOS 12 or newer, works on both Intel and Apple Silicon Macs.
+Requires macOS 15 or newer, works on both Intel and Apple Silicon Macs.
 
 1. Download `LayoutSwitcher.zip` by the link below, unzip it and move LayoutSwitcher application to your Applications folder
 2. Run the application. Since it is not notarized by Apple, the first launch is blocked with "Apple could not verify LayoutSwitcher is free of malware". To allow it open "Settings -> Privacy & Security", scroll down and click "Open Anyway". Alternatively run in Terminal `xattr -dr com.apple.quarantine /Applications/LayoutSwitcher.app`

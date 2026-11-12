@@ -3,7 +3,7 @@ import SwiftUI
 import ServiceManagement
 import Carbon
 
-@NSApplicationMain
+@main
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var arrayLangHotKeys: [NSEvent.ModifierFlags] = [.function, .option, .control, .command]
@@ -16,12 +16,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var editKeysState: EditHotKeys = []
     
     private struct Constants {
-        // Launcher application bundle identifier
-        static let helperBundleID = "com.triton.layoutswitcherlauncher"
         // Icon image sixe
         static let imageSize = 18.0
-        // Key code for a space bar
-        static var spaceKeyCode: CGKeyCode = 0x31
     }
 
     public func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -146,9 +142,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         editkeysMenu.submenu = editHotkeysSubmenu
         updateEditMenuState(editkeysMenu: editkeysMenu)
         
-        // Define autostart menu and get previos state
+        // Define autostart menu and get its state from the system
         let autostartMenuItem = NSMenuItem(title: "Launch at login", action: #selector(applicationAutostart), keyEquivalent: "s")
-        autostartMenuItem.state = SettingsHelper.shared.isAutostartEnable ? .on : .off
+        autostartMenuItem.state = isLaunchAtLoginEnabled() ? .on : .off
         statusBarMenu.addItem(autostartMenuItem)
         
         // Define other menu items
@@ -273,8 +269,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     private func sendDefaultEditHotkey(_ key: String, code: UInt16) {
-        // Create a native system 'Control + Space' event
-        // TODO: maybe better to read system's layout hotkeys instead of hardcoding
+        // Send the same key with Command instead of Control
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
         let keyDown = CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: true)
         let keyUp = CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: false)
@@ -413,48 +408,41 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
     
-    private func launchAtLogin(_ newState: Bool) -> Bool {
-        var result = false
-        
-        if #available(macOS 13.0, *) {
-                if newState == true {
-                    try? SMAppService.mainApp.register()
-                } else {
-                    try? SMAppService.mainApp.unregister()
-                }
-            
-                // FIXME: temporary hardcoded, get the status above
-                result = true
-        } else {
-            result = SMLoginItemSetEnabled(Constants.helperBundleID as CFString, newState)
-        }
-
-        return result
+    private func isLaunchAtLoginEnabled() -> Bool {
+        return SMAppService.mainApp.status == .enabled
     }
-    
-    @objc private func applicationAutostart(_ sender: NSMenuItem) {
-        // Update menu item checkbox
-        sender.state = sender.state == .on ? .off : .on
-        
-        // Get the new state based on the menu item checkbox
-        let newState = sender.state == .on ? true : false
 
-        // Run helping application to enable autostart
-        let setupResult = launchAtLogin(newState)
-        
-        // Save settings if action takes effect
-        if setupResult == true {
-            SettingsHelper.shared.isAutostartEnable = newState
-        } else {
+    private func launchAtLogin(_ newState: Bool) -> Bool {
+        do {
+            if newState {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    @objc private func applicationAutostart(_ sender: NSMenuItem) {
+        // Get the new state based on the menu item checkbox
+        let newState = sender.state != .on
+
+        if !launchAtLogin(newState) {
             let securityAlert = NSAlert()
-            
+
             securityAlert.messageText = "Can't perform this operation"
             securityAlert.informativeText =
-                "Please check that application was copied to /Application directory and try again.\n" +
-                "You can also add it manually Settings -> Users and Groups -> Login Items"
+                "Please check that application was copied to /Applications directory and try again.\n" +
+                "You can also add it manually in Settings -> General -> Login Items"
             securityAlert.alertStyle = .warning
             securityAlert.addButton(withTitle: "Ok")
+            securityAlert.runModal()
         }
+
+        // Show the actual state, as it can also be changed in system settings
+        sender.state = isLaunchAtLoginEnabled() ? .on : .off
     }
     
     @objc private func applicationAbout() {
