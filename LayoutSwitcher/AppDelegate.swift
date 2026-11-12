@@ -4,7 +4,7 @@ import ServiceManagement
 import Carbon
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var arrayLangHotKeys: [NSEvent.ModifierFlags] = [.function, .option, .control, .command]
 
@@ -14,7 +14,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private var enabledEditKeysValues: [String] = []
     private var editKeysState: EditHotKeys = []
-    private var allInputSources: [String] = []
     
     private struct Constants {
         // Launcher application bundle identifier
@@ -114,7 +113,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Assign submenu to main menu
         hotkeysMenu.submenu = hotkeysSubmenu
-        
+
+        // Define submenu with layouts to cycle through, refilled each time it opens
+        let cycleSubmenu = NSMenu.init()
+        cycleSubmenu.delegate = self
+        cycleSubmenu.autoenablesItems = false
+        updateCycleMenu(cycleSubmenu)
+
+        let cycleMenu = statusBarMenu.addItem(withTitle: "Cycle through", action: nil, keyEquivalent: "")
+        cycleMenu.submenu = cycleSubmenu
+
         // Define edit hot keys submenu
         let editHotkeysSubmenu = NSMenu.init()
         
@@ -151,9 +159,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menuBarItem.menu = statusBarMenu
     }
-    
+
+    public func menuNeedsUpdate(_ menu: NSMenu) {
+        // Only the cycle submenu has a delegate, refresh it in case layouts were changed in system settings
+        updateCycleMenu(menu)
+    }
+
+    private func updateCycleMenu(_ menu: NSMenu) {
+        let excludedIds = SettingsHelper.shared.excludedInputSourceIds
+
+        menu.removeAllItems()
+        for inputSource in getAllInputSources() {
+            let menuItem = NSMenuItem(title: inputSource.name, action: #selector(applicationToggleCycledInputSource), keyEquivalent: "")
+            menuItem.representedObject = inputSource.id
+            menuItem.state = excludedIds.contains(inputSource.id) ? .off : .on
+            menu.addItem(menuItem)
+        }
+
+        // Do not allow to uncheck the last layout, so the hot key always has one to switch to
+        let checkedItems = menu.items.filter { $0.state == .on }
+        if (checkedItems.count == 1) {
+            checkedItems.first?.isEnabled = false
+        }
+    }
+
     private func initLangSwitchEventMonitor() {
-        allInputSources = getAllInputSourceIds()
         // Get second modifier key, according to menu
         let secondModifierFlag = arrayLangHotKeys[SettingsHelper.shared.checkedHotKeyIndex]
         
@@ -219,17 +249,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        if (allInputSources.isEmpty || allInputSources.count == 1) {
+        // Re-read layouts on each switch to pick up changes made in system settings
+        let allInputSourceIds = getAllInputSources().map { $0.id }
+        let excludedIds = SettingsHelper.shared.excludedInputSourceIds
+        var cycledInputSourceIds = allInputSourceIds.filter { !excludedIds.contains($0) }
+
+        // Fall back to all layouts if none of the checked ones are installed anymore
+        if (cycledInputSourceIds.isEmpty) {
+            cycledInputSourceIds = allInputSourceIds
+        }
+        guard let firstInputSourceId = cycledInputSourceIds.first else {
             return
         }
-        guard let currentIndex = allInputSources.firstIndex(of: currentInputSourceId) else {
+
+        // Start the cycle over if current layout is not part of it
+        guard let currentIndex = cycledInputSourceIds.firstIndex(of: currentInputSourceId) else {
+            setInputSourceId(firstInputSourceId)
             return
         }
-        var nextIndex = currentIndex + 1;
-        if (nextIndex >= allInputSources.count) {
-            nextIndex = 0
+        let nextIndex = (currentIndex + 1) % cycledInputSourceIds.count
+        if (nextIndex != currentIndex) {
+            setInputSourceId(cycledInputSourceIds[nextIndex])
         }
-        setInputSourceId(allInputSources[nextIndex])
     }
     
     private func sendDefaultEditHotkey(_ key:String, code:UInt16) {
@@ -253,19 +294,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
             return nil;
         }
-        return TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceID)
-            .map { Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String }
+        return getInputSourceStringProperty(inputSource, kTISPropertyInputSourceID)
     }
-    
-    private func getAllInputSourceIds() -> [String] {
+
+    private func getAllInputSources() -> [(id: String, name: String)] {
         guard let inputSources = TISCreateInputSourceList(nil, false)?.takeRetainedValue() as? [TISInputSource] else {
             return [];
         }
         let selectableSources = inputSources.filter(isSelectableInputSource)
         return selectableSources.compactMap { src in
-            TISGetInputSourceProperty(src, kTISPropertyInputSourceID)
-                .map { Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String }
+            guard let id = getInputSourceStringProperty(src, kTISPropertyInputSourceID) else {
+                return nil
+            }
+            return (id, getInputSourceStringProperty(src, kTISPropertyLocalizedName) ?? id)
         }
+    }
+
+    private func getInputSourceStringProperty(_ inputSource: TISInputSource, _ key: CFString) -> String? {
+        return TISGetInputSourceProperty(inputSource, key)
+            .map { Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String }
     }
     
     private func isSelectableInputSource(_ inputSource: TISInputSource) -> Bool {
@@ -313,6 +360,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }        
     }
     
+    @objc private func applicationToggleCycledInputSource(_ sender: NSMenuItem) {
+        guard let inputSourceId = sender.representedObject as? String else {
+            return
+        }
+
+        // Update the checked state of menu item and save it
+        sender.state = sender.state == .on ? .off : .on
+
+        var excludedIds = SettingsHelper.shared.excludedInputSourceIds
+        excludedIds.removeAll { $0 == inputSourceId }
+        if (sender.state == .off) {
+            excludedIds.append(inputSourceId)
+        }
+        SettingsHelper.shared.excludedInputSourceIds = excludedIds
+    }
+
     @objc private func applicationSetWinEditKey(_ sender: NSMenuItem) {
         // Update the checked state of menu item and save it
         sender.state = sender.state == .on ? .off : .on

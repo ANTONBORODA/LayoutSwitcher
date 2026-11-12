@@ -5,6 +5,7 @@ class SettingsHelper {
     private let enableAutostart = "ENABLE_AUTOSTART"
     private let enable = "ENABLE"
     private let winEditHotKeys = "WIN_EDIT_HOTKEYS"
+    private let excludedInputSources = "EXCLUDED_INPUT_SOURCES"
 
     static let shared = SettingsHelper()
 
@@ -28,6 +29,12 @@ class SettingsHelper {
     var checkedHotKeyIndex: Int {
         get { store.object(forKey: indexHotKey) as? Int ?? 2 }
         set { store.set(newValue, forKey: indexHotKey) }
+    }
+
+    // Layouts unchecked in the menu, so newly added layouts join the cycle by default
+    var excludedInputSourceIds: [String] {
+        get { store.object(forKey: excludedInputSources) as? [String] ?? [] }
+        set { store.set(newValue, forKey: excludedInputSources) }
     }
 
 }
