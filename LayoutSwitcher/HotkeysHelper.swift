@@ -36,10 +36,9 @@ struct EditHotKeys: OptionSet {
     }
 }
 
-var editHotkeysValues = [EditHotKeys.UndRedo.rawValue: ["z","y"],
-                   EditHotKeys.CopyPaste.rawValue: ["x","c","v"],
+var editHotkeysValues = [EditHotKeys.UndRedo.rawValue: ["z", "y"],
+                   EditHotKeys.CopyPaste.rawValue: ["x", "c", "v"],
                    EditHotKeys.Find.rawValue: ["f"],
                    EditHotKeys.All.rawValue: ["a"],
                    EditHotKeys.OpenSave.rawValue: ["o", "s"],
                    EditHotKeys.Print.rawValue: ["p"]]
-

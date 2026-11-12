@@ -55,19 +55,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         deinitEditEventMonitor()
     }
     
-    private func updateEditMenuState(editkeysMenu: NSMenuItem){
+    private func updateEditMenuState(editkeysMenu: NSMenuItem) {
         let submenu = editkeysMenu.submenu
         var hotkeysState: NSControl.StateValue = .off
         submenu?.items.forEach {
-            if( $0.isSeparatorItem || hotkeysState == .mixed ){
+            if $0.isSeparatorItem || hotkeysState == .mixed {
                 return
             }
                 
-            switch $0.state{
+            switch $0.state {
             case .on:
                 hotkeysState = .on
             case .off:
-                if(hotkeysState == .on ){
+                if hotkeysState == .on {
                     hotkeysState = .mixed
                 }
             default:
@@ -78,7 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         editkeysMenu.state = hotkeysState
     }
     
-    private func newEditMenuItem(_ title: String, key: String, tag:EditHotKeys) -> NSMenuItem {
+    private func newEditMenuItem(_ title: String, key: String, tag: EditHotKeys) -> NSMenuItem {
         let menuItem = NSMenuItem()
         menuItem.title = title
         menuItem.action = #selector(applicationSetWinEditKey)
@@ -99,8 +99,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         // Define hot keys submenu
         let hotkeysSubmenu = NSMenu.init()
-        hotkeysSubmenu.addItem(withTitle: "Shift ⇧ + Fn",        action: #selector(applicationChangeHotkey), keyEquivalent: "")
-        hotkeysSubmenu.addItem(withTitle: "Shift ⇧ + Option ⌥",  action: #selector(applicationChangeHotkey), keyEquivalent: "")
+        hotkeysSubmenu.addItem(withTitle: "Shift ⇧ + Fn", action: #selector(applicationChangeHotkey), keyEquivalent: "")
+        hotkeysSubmenu.addItem(withTitle: "Shift ⇧ + Option ⌥", action: #selector(applicationChangeHotkey), keyEquivalent: "")
         hotkeysSubmenu.addItem(withTitle: "Shift ⇧ + Control ⌃", action: #selector(applicationChangeHotkey), keyEquivalent: "")
         hotkeysSubmenu.addItem(withTitle: "Shift ⇧ + Command ⌘", action: #selector(applicationChangeHotkey), keyEquivalent: "")
         
@@ -128,16 +128,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         editKeysState = EditHotKeys(rawValue: SettingsHelper.shared.winEditKeys)
 
-        editHotkeysSubmenu.addItem(newEditMenuItem("Undo/Redo: Control ⌃ + Z | Y", key: "z",tag: EditHotKeys.UndRedo))
-        editHotkeysSubmenu.addItem(newEditMenuItem("Copy/Paste: Control ⌃ + X | C | V", key: "c",tag: EditHotKeys.CopyPaste))
+        editHotkeysSubmenu.addItem(newEditMenuItem("Undo/Redo: Control ⌃ + Z | Y", key: "z", tag: EditHotKeys.UndRedo))
+        editHotkeysSubmenu.addItem(newEditMenuItem("Copy/Paste: Control ⌃ + X | C | V", key: "c", tag: EditHotKeys.CopyPaste))
         editHotkeysSubmenu.addItem(NSMenuItem.separator())
-        editHotkeysSubmenu.addItem(newEditMenuItem("Find: Control ^ + F",key: "f", tag: EditHotKeys.Find))
-        editHotkeysSubmenu.addItem(newEditMenuItem("Select all: Control ⌃ + A",key: "l", tag: EditHotKeys.All))
-        editHotkeysSubmenu.addItem(newEditMenuItem("Open/Save: Control ⌃ + O | S", key: "o",tag: EditHotKeys.OpenSave))
+        editHotkeysSubmenu.addItem(newEditMenuItem("Find: Control ^ + F", key: "f", tag: EditHotKeys.Find))
+        editHotkeysSubmenu.addItem(newEditMenuItem("Select all: Control ⌃ + A", key: "l", tag: EditHotKeys.All))
+        editHotkeysSubmenu.addItem(newEditMenuItem("Open/Save: Control ⌃ + O | S", key: "o", tag: EditHotKeys.OpenSave))
         editHotkeysSubmenu.addItem(NSMenuItem.separator())
-        editHotkeysSubmenu.addItem(newEditMenuItem("Print: Control ⌃ + P",key: "p",tag: EditHotKeys.Print))
+        editHotkeysSubmenu.addItem(newEditMenuItem("Print: Control ⌃ + P", key: "p", tag: EditHotKeys.Print))
     
-        //editHotkeysSubmenu.addItem(withTitle: "Close: ⌥F4",  action: #selector(applicationSetWinEditKey), keyEquivalent: "q")
+        // editHotkeysSubmenu.addItem(withTitle: "Close: ⌥F4",  action: #selector(applicationSetWinEditKey), keyEquivalent: "q")
         
         // Define main menu
         let editkeysMenu = statusBarMenu.addItem(withTitle: "Edit shortcuts", action: nil, keyEquivalent: "")
@@ -150,7 +150,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let autostartMenuItem = NSMenuItem(title: "Launch at login", action: #selector(applicationAutostart), keyEquivalent: "s")
         autostartMenuItem.state = SettingsHelper.shared.isAutostartEnable ? .on : .off
         statusBarMenu.addItem(autostartMenuItem)
-        
         
         // Define other menu items
         statusBarMenu.addItem(NSMenuItem.separator())
@@ -178,7 +177,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // Do not allow to uncheck the last layout, so the hot key always has one to switch to
         let checkedItems = menu.items.filter { $0.state == .on }
-        if (checkedItems.count == 1) {
+        if checkedItems.count == 1 {
             checkedItems.first?.isEnabled = false
         }
     }
@@ -189,8 +188,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         // Enable key event monitor
         langEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
-            if (event.modifierFlags.contains(.shift) &&
-                event.modifierFlags.contains(secondModifierFlag)) {
+            if event.modifierFlags.contains(.shift) &&
+                event.modifierFlags.contains(secondModifierFlag) {
                     self.selectNextLayout()
             }
         }
@@ -204,11 +203,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Enable key event monitor
         editEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
             
-            if (event.modifierFlags.contains(.control)){
+            if event.modifierFlags.contains(.control) {
                 let char = event.charactersIgnoringModifiers
-                let charCode = event.keyCode;
-                if(self.enabledEditKeysValues.contains(char ?? "/")){
-                    self.sendDefaultEditHotkey(char ?? "/", code:charCode)
+                let charCode = event.keyCode
+                if self.enabledEditKeysValues.contains(char ?? "/") {
+                    self.sendDefaultEditHotkey(char ?? "/", code: charCode)
                 }
             }
         }
@@ -235,7 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     private func isApplicationHasSecurityAccess() -> Bool {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String : true]
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         return AXIsProcessTrustedWithOptions(options)
     }
     
@@ -255,7 +254,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var cycledInputSourceIds = allInputSourceIds.filter { !excludedIds.contains($0) }
 
         // Fall back to all layouts if none of the checked ones are installed anymore
-        if (cycledInputSourceIds.isEmpty) {
+        if cycledInputSourceIds.isEmpty {
             cycledInputSourceIds = allInputSourceIds
         }
         guard let firstInputSourceId = cycledInputSourceIds.first else {
@@ -268,12 +267,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         let nextIndex = (currentIndex + 1) % cycledInputSourceIds.count
-        if (nextIndex != currentIndex) {
+        if nextIndex != currentIndex {
             setInputSourceId(cycledInputSourceIds[nextIndex])
         }
     }
     
-    private func sendDefaultEditHotkey(_ key:String, code:UInt16) {
+    private func sendDefaultEditHotkey(_ key: String, code: UInt16) {
         // Create a native system 'Control + Space' event
         // TODO: maybe better to read system's layout hotkeys instead of hardcoding
         let src = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
@@ -292,14 +291,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     
     private func getCurrentInputSourceId() -> String? {
         guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
-            return nil;
+            return nil
         }
         return getInputSourceStringProperty(inputSource, kTISPropertyInputSourceID)
     }
 
     private func getAllInputSources() -> [(id: String, name: String)] {
         guard let inputSources = TISCreateInputSourceList(nil, false)?.takeRetainedValue() as? [TISInputSource] else {
-            return [];
+            return []
         }
         let selectableSources = inputSources.filter(isSelectableInputSource)
         return selectableSources.compactMap { src in
@@ -339,7 +338,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let filter = [kTISPropertyInputSourceID as String: id] as CFDictionary
         guard let filteredArray = TISCreateInputSourceList(filter, false)?.takeRetainedValue() as? [TISInputSource],
               let inputSource = filteredArray.first else {
-            return;
+            return
         }
         TISSelectInputSource(inputSource)
     }
@@ -354,10 +353,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         
         // Set previosly checked item to unchecked
         sender.menu?.items.forEach {
-            if ($0 != sender && $0.state == .on) {
+            if $0 != sender && $0.state == .on {
                 $0.state = sender.state == .on ? .off : .on
             }
-        }        
+        }
     }
     
     @objc private func applicationToggleCycledInputSource(_ sender: NSMenuItem) {
@@ -370,7 +369,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         var excludedIds = SettingsHelper.shared.excludedInputSourceIds
         excludedIds.removeAll { $0 == inputSourceId }
-        if (sender.state == .off) {
+        if sender.state == .off {
             excludedIds.append(inputSourceId)
         }
         SettingsHelper.shared.excludedInputSourceIds = excludedIds
@@ -383,7 +382,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var tagsValue = 0
         
         sender.menu?.items.forEach {
-            if ($0.state == .on) {
+            if $0.state == .on {
                 tagsValue += $0.tag
             }
         }
@@ -405,11 +404,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Get the new state based on the menu item checkbox
         let disabled = sender.state == .on ? true : false
         
-        if (disabled){
+        if disabled {
             deinitLangEventMonitor()
             deinitEditEventMonitor()
-        }
-        else{
+        } else {
             updateLangEventMonitor()
             updateEditEventMonitor()
         }
@@ -479,4 +477,3 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         exit(0)
     }
 }
-
